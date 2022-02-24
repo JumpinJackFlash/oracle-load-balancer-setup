@@ -3,7 +3,7 @@ Setup a regional load balancer and a Let's Encrypt SSL Cert. with this script.
 
 The script also sets up automated certificate renewal with a cron job.
 
-Install these files on an OCI compute node.
+Install these files on an OCI compute node. If you teardown the compute node you used to register with LE, you will need to reimplement the certificate renewal.
 
 Before running this script you must execute 'oci setup config' to enable OCI command line support.
 

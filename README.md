@@ -24,6 +24,8 @@ To see an example of how we at AsterionDB utilize this script please refer to th
 
   (https://asteriondb.com/getting-started/)
   
+  <a href="https://asteriondb.com/getting-started/" target="_blank" /a>
+  
 Here's the logged output of setupLoadBalancer.sh:
 
   (https://asteriondb.com/installation-log/#load-balancer-setup)

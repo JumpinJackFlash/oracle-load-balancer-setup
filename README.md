@@ -16,6 +16,8 @@ Take a look at and run the setupLoadBalancer.sh script. It will ask you for:
 
 You must register the IP address of the Load Balancer with your domain provider.
 
+After installation you can manually add more backends to the https backend set.
+
 To see an example of how we at AsterionDB utilize this script please refer to this link:
 
   (https://asteriondb.com/getting-started/)

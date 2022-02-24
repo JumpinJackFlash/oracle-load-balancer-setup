@@ -5,6 +5,8 @@ The script also sets up automated certificate renewal with a cron job.
 
 Install these files on an OCI compute node.
 
+Before running this script you must execute 'oci setup config' to enable OCI command line support.
+
 Take a look at and run the setupLoadBalancer.sh script. It will ask you for:
 
 - Certificate type: production|test
@@ -25,3 +27,6 @@ To see an example of how we at AsterionDB utilize this script please refer to th
 Here's the logged output of setupLoadBalancer.sh:
 
   (https://asteriondb.com/installation-log/#load-balancer-setup)
+
+Future Plans:
+- Convert from bash (yuk) to Python (meh).

@@ -1,0 +1,75 @@
+[
+  {
+                "description": "Created by setupLoadBalancer script.",
+                "isStateless": false,
+                "protocol": "6",
+                "source": "0.0.0.0/0",
+                "sourceType": "CIDR_BLOCK",
+                "tcpOptions": {
+                        "destinationPortRange": {
+                                "max": 443,
+                                "min": 443
+                        }
+                }
+        },
+        {
+                "description": "Created by setupLoadBalancer script.",
+                "isStateless": false,
+                "protocol": "6",
+                "source": "0.0.0.0/0",
+                "sourceType": "CIDR_BLOCK",
+                "tcpOptions": {
+                        "destinationPortRange": {
+                                "max": 80,
+                                "min": 80
+                        }
+                }
+        },
+        {
+                "description": "Created by setupLoadBalancer script.",
+                "isStateless": false,
+                "protocol": "6",
+                "source": "0.0.0.0/0",
+                "sourceType": "CIDR_BLOCK",
+                "tcpOptions": {
+                        "destinationPortRange": {
+                                "max": 22,
+                                "min": 22
+                        }
+                }
+        },
+        {
+                "description": "Created by setupLoadBalancer script.",
+                "isStateless": false,
+                "protocol": "6",
+                "source": "10.0.0.0/24",
+                "sourceType": "CIDR_BLOCK",
+                "tcpOptions": {
+                        "destinationPortRange": {
+                                "max": 8080,
+                                "min": 8080
+                        }
+                }
+        },
+        {
+                "description": "Created by setupLoadBalancer script.",
+                "isStateless": false,
+                "protocol": "1",
+                "source": "0.0.0.0/0",
+                "sourceType": "CIDR_BLOCK",
+                "icmpOptions": {
+                  "type": 3,
+                  "code": 4
+                  }
+        },
+        {
+                "description": "Created by setupLoadBalancer script.",
+                "isStateless": false,
+                "protocol": "1",
+                "source": "10.0.0.0/16",
+                "sourceType": "CIDR_BLOCK",
+                "icmpOptions": {
+                  "type": 3
+                  }
+        }
+]

@@ -1,0 +1,9 @@
+[
+  {
+    "description": "Created by setupLoadBalancer script.",
+    "destination": "0.0.0.0/0",
+    "destinationType": "CIDR_BLOCK",
+    "isStateless": false,
+    "protocol": "all"
+  }
+]

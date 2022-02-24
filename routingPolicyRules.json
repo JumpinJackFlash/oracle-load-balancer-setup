@@ -1,0 +1,8 @@
+[{
+	"name": "certbot_route",
+        "condition": "all(http.request.url.path sw (i '/.well-known/acme-challenge'))",
+	"actions": [{
+		"name": "FORWARD_TO_BACKENDSET",
+		"backendSetName": "certbot_bs"
+	}]
+}]

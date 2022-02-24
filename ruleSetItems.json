@@ -1,0 +1,20 @@
+[
+ {
+    "action": "REDIRECT",
+    "conditions": [
+      {
+        "attributeName": "PATH",
+        "attributeValue": "/",
+        "operator": "FORCE_LONGEST_PREFIX_MATCH"
+      }
+    ],
+    "redirectUri": {
+      "host": "{host}",
+      "path": "{path}",
+      "port": 443,
+      "protocol": "HTTPS",
+      "query": "{query}"
+    },
+    "responseCode": 301
+  }
+]

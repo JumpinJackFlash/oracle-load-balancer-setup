@@ -18,6 +18,8 @@ Take a look at and run the setupLoadBalancer.sh script. It will ask you for:
 
 You must register the IP address of the Load Balancer with your domain provider.
 
+It's best to ask for a test certificate while you are getting things sorted out. LE will refuse your requests if you ask for too many production certificates.
+
 After installation you can manually add more backends to the https backend set.
 
 To see an example of how we at AsterionDB utilize this script please refer to this link:

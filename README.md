@@ -22,7 +22,7 @@ It's best to ask for a test certificate while you are getting things sorted out.
 
 After installation you can manually add more backends to the https backend set.
 
-To see an example of how we at AsterionDB utilize this script please refer to this link:
+To see an example of how AsterionDB utilizes this script please refer to this link:
 
   (https://asteriondb.com/getting-started/)
   

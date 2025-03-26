@@ -1,5 +1,17 @@
 #!/bin/bash
 
+#
+# syntax: ./setupLoadBalancer.sh
+#
+# To revoke an SSL certificate (i.e. to recover from an incomplete installation)
+#
+#   sudo certbot revoke --register-unsafely-without-email --cert-name ${YOUR_DOMAIN}
+#
+# To delete a certificate (i.e. a test certificate)
+#
+#  sudo certbot delete --cert-name ${YOUR_DOMAIN}
+#
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
@@ -15,7 +27,6 @@ export DOMAIN=
 export EMAIL=
 COMP_OCID=
 SUB_OCID=
-SHAPE=
 MIN_MBPS=
 MAX_MBPS=
 
@@ -26,6 +37,7 @@ if [ ! -f ~/.oci/config ]; then
   echo -e "${RED}It does not appear as though you have run 'oci setup config' to create your OCI CLI configuration file.${NC}"
   echo
   echo -e "${YELLOW}The OCI CLI can be installed by running 'yum install -y python36-oci-cli' as sudo.${NC}"
+  echo -e "${YELLOW}After installing the CLI, run 'oci-setup-config' as the asterion user.${NC}"
   echo
   exit
 fi
@@ -103,85 +115,39 @@ while [ "${SUB_OCID}" == '' ]; do
   [ "${SUB_OCID}" == '' ] && echo -e "${RED}A VCN subnet OCID must be specified.${NC}"
 done
 
-echo "These are the load balancer shapes available:"
 echo
-echo "  1 - Flexible (default)"
-echo "  2 - 10Mbps-Micro (Always Free)"
-echo "  3 - 10Mbps"
-echo "  4 - 100Mbps"
-echo "  5 - 400Mbps"
-echo "  6 - 800Mbps"
+echo "Flexible shape requires min/max Mbps values..."
 echo
 
-E_SHAPE=''
-
-while [ "${SHAPE}" == '' ]; do
-  read -p "Enter the number of the desired shape [1]: " E_SHAPE
-  case "${E_SHAPE}" in
-    "")
-      SHAPE='flexible'
-      ;;
-    1)
-      SHAPE='flexible'
-      ;;
-    2)
-      SHAPE='10Mbps-Micro'
-      ;;
-    3)
-      SHAPE='10Mbps'
-      ;;
-    4)
-      SHAPE='100Mbps'
-      ;;
-    5)
-      SHAPE='400Mbps'
-      ;;
-    6)
-      SHAPE='800Mbps'
-      ;;
-    *)
-      echo "Load balancer shape ${E_SHAPE} is invalid."
-      ;;
-  esac
+while [ "${MIN_MBPS}" == '' ]; do
+read -p "Enter the minimum Mbps (10 - 1000) [10]: " MIN_MBPS
+[ "${MIN_MBPS}" == '' ] && MIN_MBPS=10
+[[ $MIN_MBPS =~ ^[0-9]+$ ]] || { echo -e "${RED}Enter a valid number...${NC}"; echo; continue; }
+if ((MIN_MBPS >= 10 && MIN_MBPS <= 1000)); then
+  break
+else
+  echo -e "${RED}Minimum Mbps must be between 10 and 1000.${NC}"
+  echo
+fi
 done
 
-if [ "${SHAPE}" == 'flexible' ]; then
+echo
 
+while [ "${MAX_MBPS}" == '' ]; do
+read -p "Enter the maximum Mbps (10 - 1000) [10]: " MAX_MBPS
+[ "${MAX_MBPS}" == '' ] && MAX_MBPS=10
+[[ $MAX_MBPS =~ ^[0-9]+$ ]] || { echo -e "${RED}Enter a valid number...${NC}"; echo; continue; }
+if ((MAX_MBPS >= 10 && MAX_MBPS <= 1000 && MIN_MBPS <= MAX_MBPS)); then
+  break
+else
+  echo -e "${RED}Maximum Mbps must be between 10 and 1000 and less than the minimum Mbps.${NC}"
   echo
-  echo "Flexible shape requires min/max Mbps values..."
-  echo
-
-  while [ "${MIN_MBPS}" == '' ]; do
-    read -p "Enter the minimum Mbps (10 - 1000) [10]: " MIN_MBPS
-    [ "${MIN_MBPS}" == '' ] && MIN_MBPS=10
-    [[ $MIN_MBPS =~ ^[0-9]+$ ]] || { echo -e "${RED}Enter a valid number...${NC}"; echo; continue; }
-    if ((MIN_MBPS >= 10 && MIN_MBPS <= 1000)); then
-      break
-    else
-      echo -e "${RED}Minimum Mbps must be between 10 and 1000.${NC}"
-      echo
-    fi
-  done
-
-  echo
-
-  while [ "${MAX_MBPS}" == '' ]; do
-    read -p "Enter the maximum Mbps (10 - 1000) [10]: " MAX_MBPS
-    [ "${MAX_MBPS}" == '' ] && MAX_MBPS=10
-    [[ $MAX_MBPS =~ ^[0-9]+$ ]] || { echo -e "${RED}Enter a valid number...${NC}"; echo; continue; }
-    if ((MAX_MBPS >= 10 && MAX_MBPS <= 1000 && MIN_MBPS <= MAX_MBPS)); then
-      break
-    else
-      echo -e "${RED}Maximum Mbps must be between 10 and 1000 and less than the minimum Mbps.${NC}"
-      echo
-    fi
-  done
-
-  SHAPE_DETAILS="{\"maximumBandwidthInMbps\": $MAX_MBPS, \"minimumBandwidthInMbps\": $MIN_MBPS}"
-  printf "%s" $SHAPE_DETAILS >shapeDetails.json
-  SHAPE_DETAILS='--shape-details file://shapeDetails.json'
-
 fi
+done
+
+SHAPE_DETAILS="{\"maximumBandwidthInMbps\": $MAX_MBPS, \"minimumBandwidthInMbps\": $MIN_MBPS}"
+printf "%s" $SHAPE_DETAILS >shapeDetails.json
+SHAPE_DETAILS='--shape-details file://shapeDetails.json'
 
 echo
 read -p "Press ENTER to begin the creation process..."
@@ -192,7 +158,7 @@ Q='"'
 
 printf "[%s%s%s]" $Q $SUB_OCID $Q >subnetDetails.json
 
-oci lb load-balancer create --compartment-id $COMP_OCID --display-name asteriondb_lb --shape-name $SHAPE --subnet-ids file://subnetDetails.json $SHAPE_DETAILS --wait-for-state SUCCEEDED --wait-interval-seconds 2 >output.json
+oci lb load-balancer create --compartment-id $COMP_OCID --display-name asteriondb_lb --shape-name flexible --subnet-ids file://subnetDetails.json $SHAPE_DETAILS --wait-for-state SUCCEEDED --wait-interval-seconds 2 >output.json
 
 LB_IP=$(jp.py-3 -f output.json data.'"ip-addresses"'[0].'"ip-address"' | tr -d '"')
 export LB_OCID=$(jp.py-3 -f output.json data.id | tr -d '"')
@@ -201,15 +167,15 @@ SL_OCID=$(oci network subnet get --subnet-id $SUB_OCID --query data.'"security-l
 
 echo -e "${GREEN}The load balancer has been created...${NC}"
 echo
-echo "The public IP address for the load balancer is:" $LB_IP
+echo "The public IP address of the load balancer for ${DOMAIN} is:" $LB_IP
 echo
-echo "Register this IP address your DNS provider for domain ${DOMAIN}."
+echo "Register this IP address with your DNS provider ."
 echo
 read -p "Verify that the DNS entry is available and then press ENTER to continue..."
 echo
 
 echo -e "${GREEN}Installing Certbot and opening port 80...${NC}"
-sudo yum install -y certbot 
+sudo dnf install -y certbot 
 
 sudo firewall-cmd  --zone=public --permanent --add-port=80/tcp
 sudo firewall-cmd --reload
@@ -230,12 +196,6 @@ oci lb backend create --backend-set-name https_bs --ip-address $IP --load-balanc
 
 echo -e "${GREEN}Creating certbot backend...${NC}"
 oci lb backend create --backend-set-name certbot_bs --ip-address $IP --load-balancer-id $LB_OCID --port 80 --wait-interval-seconds 2 --wait-for-state SUCCEEDED
-
-echo -e "${GREEN}Creating routing policy for certbot...${NC}"
-oci lb routing-policy create --condition-language-version V1 --load-balancer-id $LB_OCID --name certbot_route --rules file://routingPolicyRules.json --wait-interval-seconds 2 --wait-for-state SUCCEEDED
-
-echo -e "${GREEN}Creating HTTP redirect rule set...${NC}"
-oci lb rule-set create --items file://ruleSetItems.json --load-balancer-id $LB_OCID --name http_redirect --wait-interval-seconds 2 --wait-for-state SUCCEEDED
 
 echo -e "${GREEN}Creating HTTP listener...${NC}"
 oci lb listener create --default-backend-set-name certbot_bs --load-balancer-id $LB_OCID --name http_listener --port 80 --protocol HTTP --wait-for-state SUCCEEDED --wait-interval-seconds 2
@@ -275,10 +235,26 @@ sed -i "s#CERT_PATH#$CERT_PATH#g" deployHook.sh
 sed -i "s#LB_OCID#$LB_OCID#g" deployHook.sh
 
 # This is here to allow the Load Balancer to catch up w/ the route and redirect rules.
-sleep 5s
+sleep 30s
 
 echo -e "${GREEN}Getting letsEncrypt certificate...${NC}"
-sudo -E certbot certonly -n --standalone $CERT_TYPE --email $EMAIL --deploy-hook /home/asterion/asterion/oracle/admin/setupLoadBalancer/deployHook.sh -d $DOMAIN --no-eff-email --agree-tos
+set +e
+CERT_SUCCESS='N'
+while [ "${CERT_SUCCESS}" == 'N' ]; do
+  sudo -E certbot certonly -n --standalone $CERT_TYPE --email $EMAIL --deploy-hook /home/asterion/asterion/oracle/admin/setupLoadBalancer/deployHook.sh -d $DOMAIN --no-eff-email --agree-tos
+  if [ $? -ne 0 ]; then
+    echo -e "${RED}Error getting letsEncyrpt certificate...${NC}"
+    read -p "Press ENTER to try again or ctrl-c to exit...."
+  else
+    CERT_SUCCESS='Y'
+  fi
+done
+
+echo -e "${GREEN}Creating routing policy for certbot...${NC}"
+oci lb routing-policy create --condition-language-version V1 --load-balancer-id $LB_OCID --name certbot_route --rules file://routingPolicyRules.json --wait-interval-seconds 2 --wait-for-state SUCCEEDED
+
+echo -e "${GREEN}Creating HTTP redirect rule set...${NC}"
+oci lb rule-set create --items file://ruleSetItems.json --load-balancer-id $LB_OCID --name http_redirect --wait-interval-seconds 2 --wait-for-state SUCCEEDED
 
 echo -e "${GREEN}Updating HTTP listener...${NC}"
 oci lb listener update --load-balancer-id $LB_OCID --listener-name http_listener --default-backend-set-name certbot_bs --port 80 --protocol HTTP --rule-set-names '["http_redirect"]' --force --wait-for-state SUCCEEDED --wait-interval-seconds 2

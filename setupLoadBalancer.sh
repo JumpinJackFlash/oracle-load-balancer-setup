@@ -36,8 +36,8 @@ if [ ! -f ~/.oci/config ]; then
   echo
   echo -e "${RED}It does not appear as though you have run 'oci setup config' to create your OCI CLI configuration file.${NC}"
   echo
-  echo -e "${YELLOW}The OCI CLI can be installed by running 'yum install -y python36-oci-cli' as sudo.${NC}"
-  echo -e "${YELLOW}After installing the CLI, run 'oci-setup-config' as the asterion user.${NC}"
+  echo -e "${YELLOW}The OCI CLI can be installed by running 'dnf install -y python36-oci-cli' as sudo.${NC}"
+  echo -e "${YELLOW}After installing the CLI, run 'oci setup config' as the asterion user.${NC}"
   echo
   exit
 fi

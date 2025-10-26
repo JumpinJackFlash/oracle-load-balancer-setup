@@ -5,11 +5,15 @@
 #
 # To revoke an SSL certificate (i.e. to recover from an incomplete installation)
 #
-#   sudo certbot revoke --register-unsafely-without-email --cert-name ${YOUR_DOMAIN}
+#  sudo certbot revoke --register-unsafely-without-email --cert-name ${YOUR_DOMAIN}
 #
 # To delete a certificate (i.e. a test certificate)
 #
 #  sudo certbot delete --cert-name ${YOUR_DOMAIN}
+#
+# To modify a certificate (e.g. add service alternate names, wildcard entry)
+#
+#  sudo certbot --certonly 
 #
 
 RED='\033[0;31m'
@@ -107,12 +111,20 @@ while [ "${COMP_OCID}" == '' ]; do
   read -p "Enter the compartment OCID that the load balancer will be placed in: " COMP_OCID
   echo ""
   [ "${COMP_OCID}" == '' ] && echo -e "${RED}A compartment OCID must be specified.${NC}"
+  if [[ ${COMP_OCID} != *"compartment"* ]]; then
+    echo -e "${RED}That doesn't look like a valid compartment OCID.${NC}"
+    COMP_OCID=''
+  fi
 done
 
 while [ "${SUB_OCID}" == '' ]; do
   read -p "Enter the VCN subnet OCID that the load balancer will be placed in: " SUB_OCID
   echo ""
   [ "${SUB_OCID}" == '' ] && echo -e "${RED}A VCN subnet OCID must be specified.${NC}"
+  if [[ ${SUB_OCID} != *"subnet"* ]]; then
+    echo -e "${RED}That doesn't look like a valid subnet OCID.${NC}"
+    SUB_OCID=''
+  fi
 done
 
 echo
@@ -175,6 +187,8 @@ read -p "Verify that the DNS entry is available and then press ENTER to continue
 echo
 
 echo -e "${GREEN}Installing Certbot and opening port 80...${NC}"
+sudo dnf install -y oracle-epel-release-el8
+sudo dnf config-manager --enable ol8_appstream ol8_addons ol8_developer_EPEL
 sudo dnf install -y certbot 
 
 sudo firewall-cmd  --zone=public --permanent --add-port=80/tcp
@@ -201,6 +215,7 @@ echo -e "${GREEN}Creating HTTP listener...${NC}"
 oci lb listener create --default-backend-set-name certbot_bs --load-balancer-id $LB_OCID --name http_listener --port 80 --protocol HTTP --wait-for-state SUCCEEDED --wait-interval-seconds 2
 
 CERT_PATH=/etc/letsencrypt/live/${DOMAIN}
+export HOME_DIR=$HOME
 export CERT_NAME=${DOMAIN}_$(date +"%Y%m%d%H%M%S")
 export RENEW_CERT=no
 
@@ -219,11 +234,11 @@ if [ "${RENEW_CERT}" == 'yes' ]; then
 
 fi
 
-sudo -E oci lb certificate create --certificate-name $CERT_NAME --load-balancer-id LB_OCID --private-key-file CERT_PATH/privkey.pem --public-certificate-file CERT_PATH/fullchain.pem --config-file /home/asterion/.oci/config --wait-interval-seconds 2 --wait-for-state SUCCEEDED
+sudo -E oci lb certificate create --certificate-name $CERT_NAME --load-balancer-id LB_OCID --private-key-file CERT_PATH/privkey.pem --public-certificate-file CERT_PATH/fullchain.pem --config-file HOME_DIR/.oci/config --wait-interval-seconds 2 --wait-for-state SUCCEEDED
 
 if [ "${RENEW_CERT}" == 'yes' ]; then
 
-  oci lb listener update --load-balancer-id LB_OCID --listener-name https_listener --default-backend-set-name https_bs --port 443 --protocol HTTP --routing-policy-name certbot_route --wait-for-state SUCCEEDED --wait-interval-seconds 2 --ssl-certificate-name $CERT_NAME --force --config-file /home/asterion/.oci/config
+  oci lb listener update --load-balancer-id LB_OCID --listener-name https_listener --default-backend-set-name https_bs --port 443 --protocol HTTP --routing-policy-name certbot_route --wait-for-state SUCCEEDED --wait-interval-seconds 2 --ssl-certificate-name $CERT_NAME --force --config-file HOME_DIR/.oci/config
 
 fi
 EOF
@@ -233,15 +248,15 @@ chmod 750 deployHook.sh
 sed -i "s#DOMAIN_VAR#$DOMAIN#g" deployHook.sh
 sed -i "s#CERT_PATH#$CERT_PATH#g" deployHook.sh
 sed -i "s#LB_OCID#$LB_OCID#g" deployHook.sh
+sed -i "s#HOME_DIR#$HOME_DIR#g" deployHook.sh
 
-# This is here to allow the Load Balancer to catch up w/ the route and redirect rules.
-sleep 30s
+CWD=`pwd`
 
 echo -e "${GREEN}Getting letsEncrypt certificate...${NC}"
 set +e
 CERT_SUCCESS='N'
 while [ "${CERT_SUCCESS}" == 'N' ]; do
-  sudo -E certbot certonly -n --standalone $CERT_TYPE --email $EMAIL --deploy-hook /home/asterion/asterion/oracle/admin/setupLoadBalancer/deployHook.sh -d $DOMAIN --no-eff-email --agree-tos
+  sudo -E certbot certonly -n --standalone $CERT_TYPE --email $EMAIL --deploy-hook $CWD/deployHook.sh -d $DOMAIN --no-eff-email --agree-tos
   if [ $? -ne 0 ]; then
     echo -e "${RED}Error getting letsEncyrpt certificate...${NC}"
     read -p "Press ENTER to try again or ctrl-c to exit...."

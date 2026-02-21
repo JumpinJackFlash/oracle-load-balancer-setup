@@ -189,7 +189,8 @@ oci lb backend-set create --health-checker-protocol TCP --health-checker-port 22
 echo -e "${GREEN}Creating https_bs backend set...${NC}"
 oci lb backend-set create --health-checker-protocol HTTP --health-checker-port 8080 --load-balancer-id $LB_OCID --name https_bs --policy weighted_round_robin --health-checker-url-path '/' --wait-interval-seconds 2 --wait-for-state SUCCEEDED
 
-IP=`ip a s ens3 | egrep -o 'inet [0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | cut -d' ' -f2`
+IPNAME=`nmcli -t -f name con`
+IP=`ip a s $IPNAME | egrep -o 'inet [0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | cut -d' ' -f2`
 
 echo -e "${GREEN}Creating https backend...${NC}"
 oci lb backend create --backend-set-name https_bs --ip-address $IP --load-balancer-id $LB_OCID --port 8080 --wait-interval-seconds 2 --wait-for-state SUCCEEDED
